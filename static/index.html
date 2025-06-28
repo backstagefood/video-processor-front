@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIAP X - Processador de Vídeos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .upload-form {
+            border: 2px dashed #ddd;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        input[type="file"] {
+            margin: 20px 0;
+            padding: 10px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover { background: #0056b3; }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .loading {
+            text-align: center;
+            display: none;
+            margin: 20px 0;
+        }
+        .files-list {
+            margin-top: 30px;
+        }
+        .file-item {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .download-btn {
+            background: #28a745;
+            color: white;
+            padding: 5px 15px;
+            text-decoration: none;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        .download-btn:hover { background: #218838; }
+        .login-form {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .login-form input {
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .login-form button {
+            width: 100%;
+        }
+        .hidden {
+            display: none;
+        }
+        .processing {
+            color: #6c757d;
+            font-style: italic;
+        }
+        .refresh-status {
+            font-size: 12px;
+            color: #6c757d;
+            text-align: right;
+            margin-top: 5px;
+        }
+        .refresh-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .small-btn {
+            padding: 5px 10px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+<!-- Formulário de Login -->
+<div id="loginContainer" class="login-form">
+    <h2>🔒 Login</h2>
+    <form id="loginForm">
+        <input type="email" id="email" placeholder="Email (ex: madugra@gmail.com)" required>
+        <input type="password" id="password" placeholder="Senha (ex: 123456)" required>
+        <button type="submit">Entrar</button>
+    </form>
+</div>
+
+<!-- Conteúdo principal (inicialmente oculto) -->
+<div id="mainContent" class="container hidden">
+    <h1>🎬 FIAP X - Processador de Vídeos</h1>
+    <p style="text-align: center; color: #666;">
+        Faça upload de um vídeo e receba um ZIP com todos os frames extraídos!
+    </p>
+
+    <form id="uploadForm" class="upload-form">
+        <p><strong>Selecione um arquivo de vídeo:</strong></p>
+        <input type="file" id="videoFile" accept="video/*" required>
+        <br>
+        <button type="submit">🚀 Processar Vídeo</button>
+    </form>
+
+    <div class="loading" id="loading">
+        <p>⏳ Processando vídeo... Isso pode levar alguns minutos.</p>
+    </div>
+
+    <div class="result" id="result"></div>
+
+    <div class="files-list">
+        <div class="refresh-controls">
+            <h3>📁 Arquivos Processados:</h3>
+            <div>
+                <button id="refreshBtn" class="small-btn">🔄 Atualizar</button>
+                <button id="toggleAutoRefresh" class="small-btn">⏸️ Parar Auto</button>
+            </div>
+        </div>
+        <div id="filesList">Carregando...</div>
+        <div id="refreshStatus" class="refresh-status"></div>
+    </div>
+</div>
+
+<script>
+    // Armazena credenciais em memória
+    let credentials = {
+        email: '',
+        password: ''
+    };
+
+    // Elementos da UI
+    const loginForm = document.getElementById('loginForm');
+    const loginContainer = document.getElementById('loginContainer');
+    const mainContent = document.getElementById('mainContent');
+    const uploadForm = document.getElementById('uploadForm');
+    const filesList = document.getElementById('filesList');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const toggleAutoRefresh = document.getElementById('toggleAutoRefresh');
+    const refreshStatus = document.getElementById('refreshStatus');
+
+    // Variáveis de controle de atualização
+    let refreshInterval = null;
+    let isAutoRefreshEnabled = false;
+    let lastProcessedFileId = null;
+
+    // Login (sem chamar API)
+    loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        credentials.email = document.getElementById('email').value;
+        credentials.password = document.getElementById('password').value;
+
+        // Apenas mostra o conteúdo principal
+        loginContainer.classList.add('hidden');
+        mainContent.classList.remove('hidden');
+
+        // Carrega a lista de arquivos após login
+        loadFilesList();
+    });
+
+    // Função para requisições autenticadas
+    async function fetchAuth(url, options = {}) {
+        const headers = new Headers(options.headers || {});
+        headers.append('Authorization', 'Basic ' + btoa(`${credentials.email}:${credentials.password}`));
+
+        return fetch(url, {
+            ...options,
+            headers
+        });
+    }
+
+    // Upload de vídeo
+    uploadForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const fileInput = document.getElementById('videoFile');
+        const file = fileInput.files[0];
+
+        if (!file) {
+            showResult('Selecione um arquivo de vídeo!', 'error');
+            return;
+        }
+
+        showLoading(true);
+        const formData = new FormData();
+        formData.append('video', file);
+
+        try {
+            const response = await fetchAuth('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            showResult(result.message, response.ok ? 'success' : 'error');
+            if (response.ok) {
+                startAutoRefresh();
+                toggleAutoRefresh.textContent = '⏸️ Parar Auto';
+            }
+        } catch (error) {
+            showResult('Erro de conexão: ' + error.message, 'error');
+        } finally {
+            showLoading(false);
+            fileInput.value = ''; // Limpa o input de arquivo
+        }
+    });
+
+    // Controles de atualização
+    refreshBtn.addEventListener('click', function() {
+        loadFilesList();
+    });
+
+    toggleAutoRefresh.addEventListener('click', function() {
+        if (isAutoRefreshEnabled) {
+            stopAutoRefresh();
+            toggleAutoRefresh.textContent = '▶️ Iniciar Auto';
+            showResult('Atualização automática pausada', 'success');
+        } else {
+            startAutoRefresh();
+            toggleAutoRefresh.textContent = '⏸️ Parar Auto';
+            showResult('Atualização automática iniciada', 'success');
+        }
+    });
+
+    function startAutoRefresh() {
+        if (refreshInterval) clearInterval(refreshInterval);
+        isAutoRefreshEnabled = true;
+        updateRefreshStatus('Atualização automática iniciada');
+
+        // Primeira verificação imediata
+        checkFilesStatus();
+
+        // Verifica a cada 5 segundos
+        refreshInterval = setInterval(checkFilesStatus, 5000);
+    }
+
+    function stopAutoRefresh() {
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+            refreshInterval = null;
+        }
+        isAutoRefreshEnabled = false;
+        updateRefreshStatus('Atualização automática pausada');
+    }
+
+    async function checkFilesStatus() {
+        try {
+            const response = await fetchAuth('/api/status');
+            const data = await response.json();
+
+            updateFilesList(data);
+            updateRefreshStatus('Última atualização: ' + new Date().toLocaleTimeString());
+
+            // Verifica se há arquivos processados
+            if (data.files && data.files.length > 0) {
+                const latestFile = data.files[0];
+
+                // Se é um novo arquivo, reinicia o monitoramento
+                if (!lastProcessedFileId || latestFile.id !== lastProcessedFileId) {
+                    lastProcessedFileId = latestFile.id;
+                }
+
+                // Se o arquivo atual foi concluído, para a atualização automática
+                if (latestFile.status === 'completed') {
+                    stopAutoRefresh();
+                    toggleAutoRefresh.textContent = '▶️ Iniciar Auto';
+                    showResult('Processamento concluído!', 'success');
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao verificar status:', error);
+            updateRefreshStatus('Erro ao atualizar: ' + error.message);
+        }
+    }
+
+    // Modificar a função loadFilesList para usar checkFilesStatus
+    async function loadFilesList() {
+        updateRefreshStatus('Atualizando manualmente...');
+        await checkFilesStatus();
+    }
+
+    // Atualiza a lista na UI
+    function updateFilesList(data) {
+        if (data.files && data.files.length > 0) {
+            filesList.innerHTML = data.files.map(file => `
+                <div class="file-item">
+                    ${file.statusId === 3 ?
+                    `<span>${file.filename} (${formatFileSize(file.size)}) - ${file.created_at}</span><a onclick="downloadFile('${file.filename}')" class="download-btn">⬇️ Download</a>`:
+                    '<span class="processing">⏳ Processando...</span>' }
+                </div>
+            `).join('');
+        } else {
+            filesList.innerHTML = '<p>Nenhum arquivo processado ainda.</p>';
+        }
+    }
+
+    // Funções auxiliares
+    function showResult(message, type) {
+        const result = document.getElementById('result');
+        result.innerHTML = message;
+        result.className = 'result ' + type;
+        result.style.display = 'block';
+
+        // Esconde a mensagem após 5 segundos
+        setTimeout(() => {
+            result.style.display = 'none';
+        }, 5000);
+    }
+
+    function showLoading(show) {
+        document.getElementById('loading').style.display = show ? 'block' : 'none';
+    }
+
+    function updateRefreshStatus(message) {
+        refreshStatus.textContent = message;
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes == null) return ''
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    async function downloadFile(filename) {
+        try {
+            // First get the file with authentication
+            const response = await fetchAuth(`/api/download/${filename}`);
+
+            if (!response.ok) {
+                throw new Error('Failed to download file');
+            }
+
+            // Get the blob data
+            const blob = await response.blob();
+
+            // Create a download link and trigger it
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+
+            // Clean up
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            showResult('Erro ao baixar arquivo: ' + error.message, 'error');
+            console.error('Download error:', error);
+        }
+    }
+</script>
+</body>
+</html>
