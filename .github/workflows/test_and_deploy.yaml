@@ -46,4 +46,10 @@ jobs:
             -Dsonar.tests=static/index.html.test.js
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
             -Dsonar.coverage.exclusions=**/node_modules/**
-            -Dsonar.javascript.file.suffixes=.js,.html            
+            -Dsonar.lang.patterns.html=**/*.html
+            -Dsonar.lang.patterns.js=**/*.js
+            -Dsonar.lang.patterns.css=**/*.css
+            -Dsonar.html.file.suffixes=.html
+            -Dsonar.javascript.file.suffixes=.js
+            -Dsonar.css.file.suffixes=.css
+            -Dsonar.analysis.forceLanguage=js
