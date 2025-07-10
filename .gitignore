@@ -1,3 +1,4 @@
 *.iml
 .idea/
 static/node_modules/
+static/package-lock.json
