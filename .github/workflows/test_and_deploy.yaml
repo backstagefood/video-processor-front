@@ -7,13 +7,7 @@ on:
   pull_request:
     branches:
       - main
-
-env:
-  AWS_REGION: us-east-1
-  ECR_REPOSITORY: video-processor-front
-  EKS_CLUSTER_NAME: video-processor
-  EKS_NAMESPACE: front
-
+      
 jobs:
   test:
     name: Run Tests
@@ -21,20 +15,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Verifica a estrutura de arquivos (debug)
+      - name: List files
+        run: ls -la
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
+          # Define o diretório onde está o package.json
+          cache-dependency-path: 'static/package-lock.json'  # Ajuste conforme necessário
 
+      # Instala dependências no diretório /static
       - name: Install dependencies
+        working-directory: ./static  # <--- Aqui definimos o diretório
         run: npm install
 
+      # Executa testes no diretório /static
       - name: Run tests
+        working-directory: ./static  # <--- Mesmo diretório
         run: npm test -- --coverage
 
+      # Upload para SonarCloud (ajuste se necessário)
       - name: Upload coverage to SonarCloud
         uses: sonarsource/sonarcloud-github-action@master
         env:
-          GITHUB_TOKEN: ${{ secrets.SONAR_HOST_URL }}
-          SONAR_TOKEN: ${{ secrets.SONAR_HOST_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Token padrão do GitHub
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}    # Token do SonarCloud
