@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIAP X - Processador de Vídeos</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+<!-- Formulário de Login -->
+<div id="loginContainer" class="login-form">
+    <h2>🔒 Login</h2>
+    <form id="loginForm">
+        <input type="email" id="email" placeholder="Email (ex: madugra@gmail.com)" required>
+        <input type="password" id="password" placeholder="Senha (ex: 123456)" required>
+        <button type="submit">Entrar</button>
+    </form>
+</div>
+
+<!-- Conteúdo principal (inicialmente oculto) -->
+<div id="mainContent" class="container hidden">
+    <h1>🎬 FIAP X - Processador de Vídeos</h1>
+    <p style="text-align: center; color: var(--secondary-color);">
+        Faça upload de um vídeo e receba um ZIP com todos os frames extraídos!
+    </p>
+
+    <form id="uploadForm" class="upload-form">
+        <p><strong>Selecione um arquivo de vídeo:</strong></p>
+        <input type="file" id="videoFile" accept="video/*" required>
+        <br>
+        <button type="submit">🚀 Processar Vídeo</button>
+    </form>
+
+    <div class="loading" id="loading">
+        <p>⏳ Processando vídeo... Isso pode levar alguns minutos.</p>
+    </div>
+
+    <div class="result" id="result"></div>
+
+    <div class="files-list">
+        <div class="refresh-controls">
+            <h3>📁 Arquivos Processados:</h3>
+            <div>
+                <button id="refreshBtn" class="small-btn">🔄 Atualizar</button>
+                <button id="toggleAutoRefresh" class="small-btn">⏸️ Parar Auto</button>
+                <button id="logoutBtn" class="small-btn" style="display: none;">🚪 Sair</button>
+            </div>
+        </div>
+        <div id="filesList">Carregando...</div>
+        <div id="refreshStatus" class="refresh-status"></div>
+    </div>
+</div>
+
+<script src="index.js"></script>
+</body>
+</html>
