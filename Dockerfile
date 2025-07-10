@@ -14,6 +14,6 @@ FROM alpine
 WORKDIR /app
 
 COPY --from=base /app/video-processor-front .
-COPY ./static /app/static
+COPY ./static/index.* /app/static
 
 CMD ["/app/video-processor-front"]

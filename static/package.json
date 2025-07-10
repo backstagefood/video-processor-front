@@ -1,0 +1,19 @@
+{
+  "name": "video-processor-front",
+  "version": "0.0.1",
+  "description": "video processor front",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.test.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "fs": "^0.0.1-security",
+    "jest": "^30.0.4",
+    "jsdom": "^26.1.0",
+    "path": "^0.12.7",
+    "puppeteer": "^24.12.1"
+  }
+}
