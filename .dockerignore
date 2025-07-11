@@ -3,3 +3,8 @@
 Dockerfile
 Makefile
 .idea
+static/backup
+static/.tool-versions
+static/package-lock.json
+static/package.json
+static/*.test.js
